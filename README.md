@@ -1,8 +1,8 @@
 # OO football (Football Shop PBP Mobile)
 
-Nama : Muhammad Azka Awliya
-NPM  : 2406431510
-Kelas: PBP-C
+Nama : Muhammad Azka Awliya \
+NPM  : 2406431510 \
+Kelas: PBP-C \
 
 # Tugas 7
 
