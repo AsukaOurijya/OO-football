@@ -2,7 +2,7 @@
 
 Nama : Muhammad Azka Awliya \
 NPM  : 2406431510 \
-Kelas: PBP-C \
+Kelas: PBP-C 
 
 # Tugas 7
 
