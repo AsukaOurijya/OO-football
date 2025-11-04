@@ -4,7 +4,7 @@ Nama : Muhammad Azka Awliya
 NPM  : 2406431510
 Kelas: PBP-C
 
-# Tugas 6
+# Tugas 7
 
 ## 1. Jelaskan apa itu widget tree pada Flutter dan bagaimana hubungan parent-child (induk-anak) bekerja antar widget.
 
