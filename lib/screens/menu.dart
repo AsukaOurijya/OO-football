@@ -1,17 +1,41 @@
 import 'package:flutter/material.dart';
+import 'package:oofootball/screens/productlist_form.dart';
+import 'package:oofootball/widgets/left_drawer.dart';
+
+enum MenuAction { viewAll, myProducts, addProduct }
 
 class MyHomePage extends StatelessWidget {
-  MyHomePage({super.key});
+  const MyHomePage({super.key});
 
   final String nama = "Muhammad Azka Awliya";
   final String npm = "2406431510";
   final String kelas = "C";
 
-  final List<ItemHomePage> items = [
-    ItemHomePage("All Products", Icons.sports_soccer, Colors.blue),
-    ItemHomePage("My Products", Icons.list, Colors.green),
-    ItemHomePage("Create Product", Icons.add, Colors.red),
+  final List<ItemHomePage> items = const [
+    ItemHomePage("Semua Produk", Icons.sports_soccer, Colors.blue, MenuAction.viewAll),
+    ItemHomePage("Koleksi Saya", Icons.list, Colors.green, MenuAction.myProducts),
+    ItemHomePage("Tambah Produk", Icons.add, Colors.red, MenuAction.addProduct),
   ];
+
+  void _handleMenuSelection(BuildContext context, ItemHomePage item) {
+    switch (item.action) {
+      case MenuAction.addProduct:
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ProductFormPage()),
+        );
+        break;
+      case MenuAction.viewAll:
+      case MenuAction.myProducts:
+        final messenger = ScaffoldMessenger.of(context);
+        messenger
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(content: Text("Kamu memilih menu ${item.name}.")),
+          );
+        break;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,6 +50,7 @@ class MyHomePage extends StatelessWidget {
         ),
         backgroundColor: Theme.of(context).colorScheme.primary,
       ),
+      drawer: const LeftDrawer(),
 
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -58,7 +83,7 @@ class MyHomePage extends StatelessWidget {
                   ),
 
                   GridView.count(
-                    primary: true,
+                    primary: false,
                     padding: const EdgeInsets.all(20),
                     crossAxisSpacing: 10,
                     mainAxisSpacing: 10,
@@ -66,7 +91,10 @@ class MyHomePage extends StatelessWidget {
                     shrinkWrap: true,
 
                     children: items.map((ItemHomePage item) {
-                      return ItemCard(item);
+                      return ItemCard(
+                        item: item,
+                        onTap: () => _handleMenuSelection(context, item),
+                      );
                     }).toList(),
                   ),
                 ],
@@ -83,8 +111,9 @@ class ItemHomePage {
   final String name;
   final IconData icon;
   final Color color;
+  final MenuAction action;
 
-  ItemHomePage(this.name, this.icon, this.color);
+  const ItemHomePage(this.name, this.icon, this.color, this.action);
 }
 
 class InfoCard extends StatelessWidget {
@@ -119,23 +148,18 @@ class InfoCard extends StatelessWidget {
 
 class ItemCard extends StatelessWidget {
   final ItemHomePage item;
-  const ItemCard(this.item, {super.key});
+  final VoidCallback onTap;
+
+  const ItemCard({required this.item, required this.onTap, super.key});
 
   @override
   Widget build(BuildContext context) {
     return Material(
       color: item.color,
       borderRadius: BorderRadius.circular(12),
-
       child: InkWell(
-        onTap: () {
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(
-                SnackBar(content: Text("Kamu telah menekan tombol ${item.name}!"))
-            );
-        },
-
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
         child: Container(
           padding: const EdgeInsets.all(8),
           child: Center(
@@ -147,11 +171,11 @@ class ItemCard extends StatelessWidget {
                   color: Colors.white,
                   size: 30.0,
                 ),
-                const Padding(padding: EdgeInsets.all(3)),
+                const SizedBox(height: 6),
                 Text(
                   item.name,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white),
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
