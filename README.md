@@ -6,6 +6,7 @@ Kelas: PBP-C
 
 - [Tugas 7](#tugas-7)
 - [Tugas 8](#tugas-8)
+- [Tugas 9](#tugas-9)
 
 # Tugas 7
 
@@ -83,3 +84,41 @@ Setiap halaman (beranda dan form) dibangun di atas `Scaffold` sehingga mendapatk
 ## 4. Bagaimana kamu menyesuaikan warna tema agar aplikasi Football Shop memiliki identitas visual yang konsisten dengan brand toko?
 
 Warna dasar aplikasi diatur melalui `ThemeData` pada `MyApp`, dengan `ColorScheme.fromSeed(seedColor: Colors.blue)` untuk memunculkan nuansa biru khas OO Football serta aksen sekunder `Colors.blueAccent`. `AppBar` di setiap halaman menggunakan warna yang masih senada (misalnya indigo dengan teks putih di form) supaya identitas brand tetap konsisten. Komponen-komponen penting seperti kartu menu dan tombol utama juga menggunakan variasi biru, hijau, dan merah yang sudah dipilih agar harmonis dengan tema global.
+
+# Tugas 9
+
+## 1. Mengapa perlu model Dart saat ambil/kirim JSON? Apa konsekuensinya jika langsung memetakan `Map<String, dynamic>` tanpa model?
+
+Model memastikan struktur data jelas dan ter-typed (null-safety, nama field konsisten). Tanpa model, raw `Map<String, dynamic>` membuat akses field rentan salah ketik, salah tipe, dan lebih sulit dirawat/di-refactor. Model juga memudahkan validasi dan serialisasi (fromJson/toJson) sehingga data lintas layer tetap terjaga.
+
+## 2. Fungsi package `http` dan `CookieRequest` dalam tugas ini? Jelaskan peran perbedaan peran `http` vs `CookieRequest`.
+
+`http` dipakai ketika melakukan request umum tanpa state sesi Django (mis. fetch JSON publik produk). `CookieRequest` membungkus `http` dengan manajemen cookie/sesi otomatis (login, register, POST form), sehingga header session/csrf disertakan tanpa mengelola manual. Jadi `CookieRequest` digunakan untuk endpoint yang butuh autentikasi atau butuh cookie.
+
+## 3. Mengapa instance `CookieRequest` perlu untuk disediakan ke semua komponen Flutter?
+
+Dengan 1 instance global (via `Provider`), semua halaman berbagi sesi/cookie yang sama: login di satu tempat langsung berlaku di halaman lain, dan refresh cookie tidak duplikatif. Ini menghindari masalah sesi terpisah antar halaman dan memudahkan akses ke data login (username/id) melalui `request.jsonData`.
+
+## 4. Konfigurasi konektivitas Flutter ↔ Django: 10.0.2.2 pada `ALLOWED_HOSTS`, CORS/SameSite/cookie, izin internet Android. Apa yang terjadi jika tidak benar?
+
+- `ALLOWED_HOSTS` mencantumkan `10.0.2.2` (bridge emulator ke host) supaya Django mengizinkan akses dari emulator. Jika tidak, Django menolak (400 Bad Request “DisallowedHost”).
+- CORS dan pengaturan cookie/SameSite harus mengizinkan origin Flutter; jika salah, browser/webview menolak berbagi resource/cookie sehingga login tidak menempel.
+- Izin internet Android (`android.permission.INTERNET`) wajib agar aplikasi bisa memanggil API; tanpa ini request gagal (network unreachable).
+
+## 5. Mekanisme pengiriman data mulai dari input hingga produk ditampilkan pada Flutter.
+
+Input dimasukkan di form (`ProductFormPage`) → divalidasi → dikirim dengan `request.postJson` ke endpoint Django → Django membuat objek dan merespons JSON status/message → Flutter menampilkan dialog sukses dan snackbar → Fetch daftar produk (`ProductListPage`) via endpoint JSON → data diparse dengan model (`newsListFromJson`) → ditrender di ListView.
+
+## 6. Mekanisme autentikasi dari login/register sampai akun bisa digunakan.
+
+Form login/register mengirim kredensial ke endpoint Django memakai `CookieRequest.post`/`login` → Django memvalidasi dan mengembalikan status, message, username/id serta mengatur cookie sesi → `CookieRequest` menyimpan cookie + `jsonData` → Aplikasi membaca `request.loggedIn` dan `request.jsonData` untuk state login → navigasi diarahkan ke halaman home; request selanjutnya otomatis menyertakan cookie sesi.
+
+## 7. Implementasi checklist di atas secara step-by-step.
+
+1. Pasang `pbp_django_auth` dan `http`, setup `Provider<CookieRequest>` di `main.dart` sebagai root.  
+2. Tambahkan endpoint Django: JSON produk, create-flutter, auth login/register; pastikan `ALLOWED_HOSTS` memuat `10.0.2.2` dan konfigurasi CORS/SameSite sesuai.  
+3. Implementasi form produk (`ProductFormPage`) dengan validasi, kirim via `request.postJson`, tampilkan dialog sukses/error.  
+4. Implementasi login/register memakai `CookieRequest.login`/`post`, cek `request.loggedIn`, simpan data user di `request.jsonData`, dan arahkan ke home.  
+5. Buat halaman daftar produk (`ProductListPage`), fetch dengan `http.get`/`newsListFromJson`, filter berdasarkan user id (onlyMine), tampilkan kartu + gambar/featured.  
+6. Pastikan izin internet Android aktif dan uji di emulator/device; hot reload untuk iterasi UI.  
+7. Uji alur lengkap: register/login → tambah produk → cek daftar produk & detail → verifikasi filter “Koleksi Saya” jalan dan status sukses muncul.
