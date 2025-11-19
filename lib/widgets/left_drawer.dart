@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:oofootball/screens/menu.dart';
 import 'package:oofootball/screens/productlist_form.dart';
+import 'package:oofootball/screens/product_list_page.dart';
 
 class LeftDrawer extends StatelessWidget {
   const LeftDrawer({super.key});
@@ -49,6 +50,19 @@ class LeftDrawer extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (context) => const MyHomePage(),
+                ),
+              );
+            },
+          ),
+
+          ListTile(
+            leading: const Icon(Icons.list_alt),
+            title: const Text('Daftar Produk'),
+            onTap: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ProductListPage(),
                 ),
               );
             },

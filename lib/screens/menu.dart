@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:oofootball/screens/productlist_form.dart';
+import 'package:oofootball/screens/product_list_page.dart';
 import 'package:oofootball/widgets/left_drawer.dart';
 
 enum MenuAction { viewAll, myProducts, addProduct }
@@ -26,13 +27,16 @@ class MyHomePage extends StatelessWidget {
         );
         break;
       case MenuAction.viewAll:
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ProductListPage()),
+        );
+        break;
       case MenuAction.myProducts:
-        final messenger = ScaffoldMessenger.of(context);
-        messenger
-          ..hideCurrentSnackBar()
-          ..showSnackBar(
-            SnackBar(content: Text("Kamu memilih menu ${item.name}.")),
-          );
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ProductListPage(onlyMine: true)),
+        );
         break;
     }
   }

@@ -1,6 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:oofootball/widgets/left_drawer.dart';
+import 'package:pbp_django_auth/pbp_django_auth.dart';
+import 'package:provider/provider.dart';
 
 class ProductFormPage extends StatefulWidget {
   const ProductFormPage({super.key});
@@ -15,6 +19,7 @@ class _ProductFormPageState extends State<ProductFormPage> {
   final TextEditingController _priceController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _thumbnailController = TextEditingController();
+  static const String _createProductUrl = 'http://localhost:8000/create-flutter/';
 
   final List<String> _categories = <String>[
     'Baju',
@@ -37,6 +42,9 @@ class _ProductFormPageState extends State<ProductFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    // CookieRequest tersedia dari provider di root app (lihat main.dart)
+    final request = context.watch<CookieRequest>();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Tambah Produk'),
@@ -178,7 +186,7 @@ class _ProductFormPageState extends State<ProductFormPage> {
                 child: FilledButton.icon(
                   icon: const Icon(Icons.save),
                   label: const Text('Save'),
-                  onPressed: _submitForm,
+                  onPressed: () => _submitForm(request),
                 ),
               ),
             ],
@@ -188,7 +196,7 @@ class _ProductFormPageState extends State<ProductFormPage> {
     );
   }
 
-  Future<void> _submitForm() async {
+  Future<void> _submitForm(CookieRequest request) async {
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
@@ -200,54 +208,80 @@ class _ProductFormPageState extends State<ProductFormPage> {
     final String category = _selectedCategory ?? '-';
     final bool isFeatured = _isFeatured;
 
-    await showDialog<void>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Produk Berhasil Disimpan'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildSummaryRow('Nama', name),
-              _buildSummaryRow('Harga', 'Rp $price'),
-              _buildSummaryRow('Kategori', category),
-              _buildSummaryRow('Unggulan', isFeatured ? 'Ya' : 'Tidak'),
-              const SizedBox(height: 8),
-              const Text(
-                'Deskripsi',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              Text(description),
-              const SizedBox(height: 8),
-              const Text(
-                'Thumbnail',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              Text(thumbnail),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Tutup'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (!mounted) {
-      return;
-    }
-
-    _resetForm();
-
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(content: Text('Produk $name tersimpan.')),
+    try {
+      final response = await request.postJson(
+        _createProductUrl,
+        jsonEncode(<String, dynamic>{
+          'name': name,
+          'price': price,
+          'description': description,
+          'thumbnail': thumbnail,
+          'category': category,
+          'is_featured': isFeatured,
+        }),
       );
+
+      if (!mounted) return;
+
+      final dynamic status = response['status'];
+      final bool success =
+          status == 'success' || status == true || response['success'] == true;
+      final String message = response['message'] ??
+          (success ? 'Produk berhasil disimpan.' : 'Gagal menyimpan produk.');
+
+      if (success) {
+        await showDialog<void>(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Produk Berhasil Disimpan'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSummaryRow('Nama', name),
+                  _buildSummaryRow('Harga', 'Rp $price'),
+                  _buildSummaryRow('Kategori', category),
+                  _buildSummaryRow('Unggulan', isFeatured ? 'Ya' : 'Tidak'),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Deskripsi',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  Text(description),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Thumbnail',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  Text(thumbnail),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Tutup'),
+                ),
+              ],
+            );
+          },
+        );
+
+        _resetForm();
+
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(content: Text(message)),
+          );
+      } else {
+        _showError(message);
+      }
+    } on FormatException catch (e) {
+      _showError('Respons backend tidak valid (bukan JSON): ${e.message}');
+    } catch (e) {
+      _showError('Terjadi kesalahan saat menyimpan produk: $e');
+    }
   }
 
   void _resetForm() {
@@ -281,6 +315,25 @@ class _ProductFormPageState extends State<ProductFormPage> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Berhasil Menyimpan'),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
